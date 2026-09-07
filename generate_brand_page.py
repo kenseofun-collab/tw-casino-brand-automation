@@ -64,9 +64,12 @@ def publish_page(brand_slug, template_path='template.json', brands_path='brands.
     final_template = process_template(template_data, brand)
     elementor_data_str = json.dumps(final_template['content'])
     
+    # Suffix for SEO
+    target_slug = f"{brand_slug}-台灣娛樂城情報網"
+    
     # Check if page already exists
     headers = get_headers()
-    resp = requests.get(f"{WP_URL}/pages?slug={brand_slug}", headers=headers, verify=False)
+    resp = requests.get(f"{WP_URL}/pages?slug={target_slug}", headers=headers, verify=False)
     page_id = None
     if resp.status_code == 200 and resp.json():
         page_id = resp.json()[0]['id']
@@ -83,7 +86,7 @@ def publish_page(brand_slug, template_path='template.json', brands_path='brands.
     payload = {
         'title': f"{brand['name']} 評論",
         'status': 'publish',
-        'slug': brand_slug,
+        'slug': target_slug,
         'type': 'page',
         'author': selected_author,
         'meta': {
@@ -94,10 +97,45 @@ def publish_page(brand_slug, template_path='template.json', brands_path='brands.
     }
     
     resp = requests.post(url, headers=headers, json=payload, verify=False)
+    
     if resp.status_code in [200, 201]:
-        print(f"✅ Success! URL: {resp.json().get('link')}")
+        page_data = resp.json()
+        print(f"✅ Success! URL: {page_data.get('link')}")
+        
+        # Add to menus if not already present
+        new_page_id = page_data['id']
+        add_to_menus(headers, new_page_id, brand['name'])
     else:
-        print(f"❌ Failed: {resp.text}")
+        print("❌ Failed:", resp.status_code, resp.text)
+
+def add_to_menus(headers, page_id, brand_name):
+    # 1. Menu 60 (台灣娛樂城評價)
+    menu_60_items = requests.get(f"{WP_URL}/menu-items?menus=60&per_page=100", headers=headers, verify=False).json()
+    if not any(item.get('object_id') == page_id for item in menu_60_items):
+        requests.post(f"{WP_URL}/menu-items", headers=headers, json={
+            'menus': 60,
+            'title': brand_name,
+            'status': 'publish',
+            'object_id': page_id,
+            'object': 'page',
+            'type': 'post_type',
+            'parent': 0
+        }, verify=False)
+        print(f"Added {brand_name} to Menu 60")
+
+    # 2. Menu 3 (Main Menu) under Parent 8721
+    menu_3_items = requests.get(f"{WP_URL}/menu-items?menus=3&per_page=100", headers=headers, verify=False).json()
+    if not any(item.get('object_id') == page_id for item in menu_3_items):
+        requests.post(f"{WP_URL}/menu-items", headers=headers, json={
+            'menus': 3,
+            'title': brand_name,
+            'status': 'publish',
+            'object_id': page_id,
+            'object': 'page',
+            'type': 'post_type',
+            'parent': 8721
+        }, verify=False)
+        print(f"Added {brand_name} to Main Menu (ID 3)")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Publish Elementor Brand Page')
