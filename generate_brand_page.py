@@ -76,8 +76,8 @@ def publish_page(brand_slug, template_path='template.json', brands_path='brands.
         print("Creating new page...")
         url = f"{WP_URL}/pages"
         
-    # List of available author IDs
-    available_authors = [26, 27, 28, 29, 31, 32, 33, 34, 35, 36]
+    # List of allowed author IDs: Tung (33), 思穎 (34), Wade Chen (35)
+    available_authors = [33, 34, 35]
     selected_author = random.choice(available_authors)
 
     payload = {
