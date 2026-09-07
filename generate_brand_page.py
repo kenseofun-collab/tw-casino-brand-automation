@@ -6,6 +6,7 @@ import base64
 import argparse
 import urllib3
 import sys
+import random
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
@@ -75,11 +76,16 @@ def publish_page(brand_slug, template_path='template.json', brands_path='brands.
         print("Creating new page...")
         url = f"{WP_URL}/pages"
         
+    # List of available author IDs
+    available_authors = [26, 27, 28, 29, 31, 32, 33, 34, 35, 36]
+    selected_author = random.choice(available_authors)
+
     payload = {
         'title': f"{brand['name']} 評論",
         'status': 'publish',
         'slug': brand_slug,
         'type': 'page',
+        'author': selected_author,
         'meta': {
             '_elementor_edit_mode': 'builder',
             '_elementor_data': elementor_data_str
